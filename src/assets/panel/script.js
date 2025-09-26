@@ -17,23 +17,23 @@ const [
 
 const defaultHttpsPorts = [443, 8443, 2053, 2083, 2087, 2096];
 const defaultHttpPorts = [80, 8080, 8880, 2052, 2082, 2086, 2095];
-const ipv4Regex = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
-const ipv6Regex = /^\[(?:(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,7}:|(?:[a-fA-F0-9]{1,4}:){1,6}:[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,5}(?::[a-fA-F0-9]{1,4}){1,2}|(?:[a-fA-F0-9]{1,4}:){1,4}(?::[a-fA-F0-9]{1,4}){1,3}|(?:[a-fA-F0-9]{1,4}:){1,3}(?::[a-fA-F0-9]{1,4}){1,4}|(?:[a-fA-F0-9]{1,4}:){1,2}(?::[a-fA-F0-9]{1,4}){1,5}|[a-fA-F0-9]{1,4}:(?::[a-fA-F0-9]{1,4}){1,6}|:(?::[a-fA-F0-9]{1,4}){1,7})\]$/;
-const ipv4CidrRegex = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?:\/(?:[0-9]|[1-2][0-9]|3[0-2]))?$/;
-const ipv6CidrRegex = /^(?:(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,7}:|(?:[a-fA-F0-9]{1,4}:){1,6}:[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,5}(?::[a-fA-F0-9]{1,4}){1,2}|(?:[a-fA-F0-9]{1,4}:){1,4}(?::[a-fA-F0-9]{1,4}){1,3}|(?:[a-fA-F0-9]{1,4}:){1,3}(?::[a-fA-F0-9]{1,4}){1,4}|(?:[a-fA-F0-9]{1,4}:){1,2}(?::[a-fA-F0-9]{1,4}){1,5}|[a-fA-F0-9]{1,4}:(?::[a-fA-F0-9]{1,4}){1,6}|:(?::[a-fA-F0-9]{1,4}){1,7}|::)(?:\/(?:12[0-8]|1[01]?[0-9]|[0-9]?[0-9]))?$/;
 const domainRegex = /^(?=.{1,253}$)(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)\.)+[a-zA-Z]{2,63}$/;
 
 fetch('/panel/settings')
     .then(async response => response.json())
     .then(data => {
         const { success, status, message, body } = data;
+
         if (status === 401 && !body.isPassSet) {
             const closeBtn = document.querySelector(".close");
             openResetPass();
             closeBtn.style.display = 'none';
         }
 
-        if (!success) throw new Error(`status ${status} - ${message}`);
+        if (!success) {
+            throw new Error(`status ${status} - ${message}`);
+        }
+
         const { subPath, proxySettings } = body;
         globalThis.subPath = encodeURIComponent(subPath);
         initiatePanel(proxySettings);
@@ -43,6 +43,7 @@ fetch('/panel/settings')
         window.onclick = (event) => {
             const qrModal = document.getElementById('qrModal');
             const qrcodeContainer = document.getElementById('qrcode-container');
+
             if (event.target == qrModal) {
                 qrModal.style.display = "none";
                 qrcodeContainer.lastElementChild.remove();
@@ -95,6 +96,7 @@ function initiateForm() {
     configForm.addEventListener('change', enableApplyButton);
 
     const textareas = document.querySelectorAll("textarea");
+
     textareas.forEach(textarea => {
         textarea.addEventListener('input', function () {
             this.style.height = 'auto';
@@ -109,6 +111,7 @@ function hasFormDataChanged() {
     const currentFormData = new FormData(configForm);
     const initialFormDataObj = formDataToObject(globalThis.initialFormData);
     const currentFormDataObj = formDataToObject(currentFormData);
+
     return JSON.stringify(initialFormDataObj) !== JSON.stringify(currentFormDataObj);
 }
 
@@ -148,7 +151,11 @@ async function getIpDetails(ip) {
         const response = await fetch('/panel/my-ip', { method: 'POST', body: ip });
         const data = await response.json();
         const { success, status, message, body } = data;
-        if (!success) throw new Error(`status ${status} - ${message}`);
+
+        if (!success) {
+            throw new Error(`status ${status} - ${message}`);
+        }
+
         return body;
     } catch (error) {
         console.error("Fetching IP error:", error.message || error)
@@ -170,7 +177,11 @@ async function fetchIPInfo() {
         const response = await fetch('https://ipwho.is/' + '?nocache=' + Date.now(), { cache: "no-store" });
         const data = await response.json();
         const { success, ip, message } = data;
-        if (!success) throw new Error(`Fetch Other targets IP failed at ${response.url} - ${message}`);
+
+        if (!success) {
+            throw new Error(`Fetch Other targets IP failed at ${response.url} - ${message}`);
+        }
+
         const { country, countryCode, city, isp } = await getIpDetails(ip);
         updateUI(ip, country, countryCode, city, isp);
         refreshIcon.classList.remove('fa-spin');
@@ -180,6 +191,7 @@ async function fetchIPInfo() {
 
     try {
         const response = await fetch('https://ipv4.icanhazip.com/?nocache=' + Date.now(), { cache: "no-store" });
+
         if (!response.ok) {
             const errorMessage = await response.text();
             throw new Error(`Fetch Cloudflare targets IP failed with status ${response.status} at ${response.url} - ${errorMessage}`);
@@ -199,19 +211,22 @@ function downloadWarpConfigs(isAmnezia) {
     window.location.href = "/panel/get-warp-configs" + client;
 }
 
-function generateSubUrl(path, app, tag, hiddifyType, singboxType) {
+function generateSubUrl(path, app, tag, singboxType) {
     const url = new URL(window.location.href);
     url.pathname = `/sub/${path}/${globalThis.subPath}`;
     app && url.searchParams.append('app', app);
-    if (tag) url.hash = `💦 ${atob('QlBC')} ${tag}`;
 
-    if (singboxType) return `sing-box://import-remote-profile?url=${url.href}`;
-    if (hiddifyType) return `hiddify://import/${url.href}`;
-    return url.href;
+    if (tag) {
+        url.hash = `💦 ${atob('QlBC')} ${tag}`;
+    }
+
+    return singboxType
+        ? `sing-box://import-remote-profile?url=${url.href}`
+        : url.href;
 }
 
-function subURL(path, app, tag, hiddifyType, singboxType) {
-    const url = generateSubUrl(path, app, tag, hiddifyType, singboxType);
+function subURL(path, app, tag, singboxType) {
+    const url = generateSubUrl(path, app, tag, singboxType);
     copyToClipboard(url);
 }
 
@@ -221,7 +236,11 @@ async function dlURL(path, app) {
     try {
         const response = await fetch(url);
         const data = await response.text();
-        if (!response.ok) throw new Error(`status ${response.status} at ${response.url} - ${data}`);
+
+        if (!response.ok) {
+            throw new Error(`status ${response.status} at ${response.url} - ${data}`);
+        }
+
         downloadJSON(data, "config.json");
     } catch (error) {
         console.error("Download error:", error.message || error);
@@ -266,10 +285,10 @@ async function uploadSettings(event) {
     }
 }
 
-function openQR(path, app, tag, title, singboxType, hiddifyType) {
+function openQR(path, app, tag, title, singboxType) {
     const qrModal = document.getElementById('qrModal');
     const qrcodeContainer = document.getElementById('qrcode-container');
-    const url = generateSubUrl(path, app, tag, hiddifyType, singboxType);
+    const url = generateSubUrl(path, app, tag, singboxType);
     let qrcodeTitle = document.getElementById("qrcodeTitle");
     qrcodeTitle.textContent = title;
     qrModal.style.display = "block";
@@ -286,6 +305,7 @@ function openQR(path, app, tag, title, singboxType, hiddifyType) {
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
     });
+
     qrcodeContainer.appendChild(qrcodeDiv);
 }
 
@@ -307,6 +327,7 @@ async function updateWarpConfigs() {
         const { success, status, message } = await response.json();
         document.body.style.cursor = 'default';
         refreshBtn.classList.remove('fa-spin');
+
         if (!success) {
             alert(`⚠️ An error occured, Please try again!\n⛔ ${message}`);
             throw new Error(`status ${status} - ${message}`);
@@ -325,6 +346,7 @@ function handleProtocolChange(event) {
     }
 
     globalThis.activeProtocols--;
+
     if (globalThis.activeProtocols === 0) {
         event.preventDefault();
         event.target.checked = !event.target.checked;
@@ -336,12 +358,14 @@ function handleProtocolChange(event) {
 
 function handlePortChange(event) {
     const portField = Number(event.target.name);
+
     if (event.target.checked) {
         globalThis.activeTlsPorts.push(portField);
         return true;
     }
 
     globalThis.activeTlsPorts = globalThis.activeTlsPorts.filter(port => port !== portField);
+
     if (globalThis.activeTlsPorts.length === 0) {
         event.preventDefault();
         event.target.checked = !event.target.checked;
@@ -354,6 +378,7 @@ function handlePortChange(event) {
 function resetSettings() {
     const confirmReset = confirm('⚠️ This will reset all panel settings.\n\n❓ Are you sure?');
     if (!confirmReset) return;
+
     const resetBtn = document.getElementById("refresh-btn");
     resetBtn.classList.add('fa-spin');
     const body = { resetSettings: true };
@@ -370,7 +395,11 @@ function resetSettings() {
             const { success, status, message, body } = data;
             document.body.style.cursor = 'default';
             resetBtn.classList.remove('fa-spin');
-            if (!success) throw new Error(`status ${status} - ${message}`);
+
+            if (!success) {
+                throw new Error(`status ${status} - ${message}`);
+            }
+
             initiatePanel(body);
             alert('✅ Panel settings reset to default successfully!');
         })
@@ -462,6 +491,7 @@ function updateSettings(event, data) {
 
     const validatedForm = validateSettings();
     if (!validatedForm) return false;
+
     const form = data ? data : validatedForm;
     const applyButton = document.getElementById('applyButton');
     document.body.style.cursor = 'wait';
@@ -475,15 +505,17 @@ function updateSettings(event, data) {
         headers: { 'Content-Type': 'application/json' }
     })
         .then(response => response.json())
-        .then(data => {
+        .then(({ success, status, message }) => {
 
-            const { success, status, message } = data;
             if (status === 401) {
                 alert('⚠️ Session expired! Please login again.');
                 window.location.href = '/login';
             }
 
-            if (!success) throw new Error(`status ${status} - ${message}`);
+            if (!success) {
+                throw new Error(`status ${status} - ${message}`);
+            }
+
             initiateForm();
             alert('✅ Settings applied successfully!');
         })
@@ -497,6 +529,7 @@ function updateSettings(event, data) {
 function validateRemoteDNS() {
     let url;
     const dns = document.getElementById("remoteDNS").value.trim();
+
     try {
         url = new URL(dns);
     } catch (error) {
@@ -539,8 +572,8 @@ function validateRemoteDNS() {
 
 function validateSanctionDns() {
     const value = document.getElementById("antiSanctionDNS").value.trim();
-
     let host;
+
     try {
         const url = new URL(value);
         host = url.hostname;
@@ -549,6 +582,7 @@ function validateSanctionDns() {
     }
 
     const isValid = isValidHostName(host, false);
+
     if (!isValid) {
         alert(`⛔ Invalid IPs or Domains.\n⚠️ ${host}`);
         return false;
@@ -574,15 +608,20 @@ function parseHostPort(input) {
 }
 
 function isValidHostName(value, isHost) {
+    const ipv4Regex = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/;
+    const ipv6Regex = /^\[(?:(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,7}:|(?:[a-fA-F0-9]{1,4}:){1,6}:[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,5}(?::[a-fA-F0-9]{1,4}){1,2}|(?:[a-fA-F0-9]{1,4}:){1,4}(?::[a-fA-F0-9]{1,4}){1,3}|(?:[a-fA-F0-9]{1,4}:){1,3}(?::[a-fA-F0-9]{1,4}){1,4}|(?:[a-fA-F0-9]{1,4}:){1,2}(?::[a-fA-F0-9]{1,4}){1,5}|[a-fA-F0-9]{1,4}:(?::[a-fA-F0-9]{1,4}){1,6}|:(?::[a-fA-F0-9]{1,4}){1,7})\]$/;
     const hostPort = parseHostPort(value.trim());
     if (!hostPort) return false;
     const { host, port } = hostPort;
     if (port && (port > 65535 || port < 1)) return false;
     if (isHost && !port) return false;
+
     return ipv6Regex.test(host) || ipv4Regex.test(host) || domainRegex.test(host);
 }
 
 function validateCustomRules() {
+    const ipv4CidrRegex = /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)(?:\/(?:[0-9]|[1-2][0-9]|3[0-2]))?$/;
+    const ipv6CidrRegex = /^(?:(?:[a-fA-F0-9]{1,4}:){7}[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,7}:|(?:[a-fA-F0-9]{1,4}:){1,6}:[a-fA-F0-9]{1,4}|(?:[a-fA-F0-9]{1,4}:){1,5}(?::[a-fA-F0-9]{1,4}){1,2}|(?:[a-fA-F0-9]{1,4}:){1,4}(?::[a-fA-F0-9]{1,4}){1,3}|(?:[a-fA-F0-9]{1,4}:){1,3}(?::[a-fA-F0-9]{1,4}){1,4}|(?:[a-fA-F0-9]{1,4}:){1,2}(?::[a-fA-F0-9]{1,4}){1,5}|[a-fA-F0-9]{1,4}:(?::[a-fA-F0-9]{1,4}){1,6}|:(?::[a-fA-F0-9]{1,4}){1,7}|::)(?:\/(?:12[0-8]|1[01]?[0-9]|[0-9]?[0-9]))?$/;
     const invalidValues = [
         'customBypassRules',
         'customBlockRules',
@@ -712,8 +751,8 @@ function validateCustomCdn() {
     const customCdnHost = document.getElementById('customCdnHost').value;
     const customCdnSni = document.getElementById('customCdnSni').value;
     const customCdnAddrs = document.getElementById('customCdnAddrs').value?.split('\n').filter(Boolean);
-
     const isCustomCdn = customCdnAddrs.length || customCdnHost !== '' || customCdnSni !== '';
+
     if (isCustomCdn && !(customCdnAddrs.length && customCdnHost && customCdnSni)) {
         alert('⛔ All "Custom" fields should be filled or deleted together!');
         return false;
@@ -751,6 +790,7 @@ function validateXrayNoises(fields) {
                 }
 
                 const [min, max] = packets[index].split("-").map(Number);
+
                 if (min > max) {
                     alert('⛔ The minimum Random noise packet should be smaller or equal to maximum!');
                     submisionError = true;
@@ -774,12 +814,13 @@ function validateXrayNoises(fields) {
 
 function logout(event) {
     event.preventDefault();
-
     fetch('/logout', { method: 'GET', credentials: 'same-origin' })
         .then(response => response.json())
-        .then(data => {
-            const { success, status, message } = data;
-            if (!success) throw new Error(`status ${status} - ${message}`);
+        .then(({ success, status, message }) => {
+            if (!success) {
+                throw new Error(`status ${status} - ${message}`);
+            }
+
             window.location.href = '/login';
         })
         .catch(error => console.error("Logout error:", error.message || error));
@@ -826,9 +867,7 @@ function resetPassword(event) {
         credentials: 'same-origin'
     })
         .then(response => response.json())
-        .then(data => {
-
-            const { success, status, message } = data;
+        .then(({ success, status, message }) => {
             if (!success) {
                 passwordError.textContent = `⚠️ ${message}`;
                 throw new Error(`status ${status} - ${message}`);
@@ -855,6 +894,7 @@ function renderPortsBlock(ports) {
     totalPorts.forEach(port => {
         const isChecked = ports.includes(port) ? 'checked' : '';
         let clss = '', handler = '';
+
         if (defaultHttpsPorts.includes(port)) {
             clss = 'class="https"';
             handler = 'onclick="handlePortChange(event)"';
@@ -872,6 +912,7 @@ function renderPortsBlock(ports) {
     });
 
     document.getElementById("tls-ports").innerHTML = tlsPortsBlock;
+
     if (noneTlsPortsBlock) {
         document.getElementById("non-tls-ports").innerHTML = noneTlsPortsBlock;
         document.getElementById("none-tls").style.display = 'flex';
@@ -895,12 +936,12 @@ function addUdpNoise(isManual, noiseIndex, udpNoise) {
         <div class="header-container">
             <h4>Noise ${index + 1}</h4>
             <button type="button" class="delete-noise">
-                <i class="fa fa-minus-circle fa-2x" aria-hidden="true"></i>
+                <span class="material-symbols-rounded">delete</span>
             </button>      
         </div>
         <div class="section">
             <div class="form-control">
-                <label>😵‍💫 v2ray Mode</label>
+                <label>😵‍💫 Mode</label>
                 <div>
                     <select name="udpXrayNoiseMode">
                         <option value="base64" ${noise.type === 'base64' ? 'selected' : ''}>Base64</option>
@@ -911,25 +952,25 @@ function addUdpNoise(isManual, noiseIndex, udpNoise) {
                 </div>
             </div>
             <div class="form-control">
-                <label>📥 Noise Packet</label>
+                <label>📥 Packet</label>
                 <div>
                     <input type="text" name="udpXrayNoisePacket" value="${noise.packet}">
                 </div>
             </div>
             <div class="form-control">
-                <label>🕞 Noise Delay</label>
+                <label>🎚️ Count</label>
+                <div>
+                    <input type="number" name="udpXrayNoiseCount" value="${noise.count}" min="1" required>
+                </div>
+            </div>
+            <div class="form-control">
+                <label>🕞 Delay</label>
                 <div class="min-max">
                     <input type="number" name="udpXrayNoiseDelayMin"
                         value="${noise.delay.split('-')[0]}" min="1" required>
                     <span> - </span>
                     <input type="number" name="udpXrayNoiseDelayMax"
                         value="${noise.delay.split('-')[1]}" min="1" required>
-                </div>
-            </div>
-            <div class="form-control">
-                <label>🎚️ Noise Count</label>
-                <div>
-                    <input type="number" name="udpXrayNoiseCount" value="${noise.count}" min="1" required>
                 </div>
             </div>
         </div>`;
@@ -947,6 +988,7 @@ function generateUdpNoise(event) {
         const array = new Uint8Array(Math.ceil(length * 3 / 4));
         crypto.getRandomValues(array);
         let base64 = btoa(String.fromCharCode(...array));
+
         return base64.slice(0, length);
     }
 
@@ -954,12 +996,14 @@ function generateUdpNoise(event) {
         const array = new Uint8Array(Math.ceil(length / 2));
         crypto.getRandomValues(array);
         let hex = [...array].map(b => b.toString(16).padStart(2, '0')).join('');
+
         return hex.slice(0, length);
     }
 
     const generateRandomString = length => {
         const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         const array = new Uint8Array(length);
+
         return Array.from(crypto.getRandomValues(array), x => chars[x % chars.length]).join('');
     };
 
@@ -1002,5 +1046,6 @@ function renderUdpNoiseBlock(xrayUdpNoises) {
     xrayUdpNoises.forEach((noise, index) => {
         addUdpNoise(false, index, noise);
     });
+
     globalThis.xrayNoiseCount = xrayUdpNoises.length;
 }

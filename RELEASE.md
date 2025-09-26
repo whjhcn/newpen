@@ -1,6 +1,8 @@
 # ⚙️ Bug fixes and Improvements
 
-- Revised sing-box DNS syntax due to recent changes
-- Validate panel remote DNS entry
-- Updated docs
-- Bug fix, NPM package removed #1045
+- Added `happyEyeballs` to Xray (VLESS, Trojan and WorkerLess)
+- Fixed WorkerLess Stats not showing in v2rayNG
+- Revised Clash custom IP rules
+- Pruned some legacy clients from code
+- UI improvements
+- Refactored, code readability
